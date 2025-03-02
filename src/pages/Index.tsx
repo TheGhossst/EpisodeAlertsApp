@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 import { useWatchlistStore } from '@/lib/watchlist-store';
 import { motion } from 'framer-motion';
 import { TVShow } from '@/lib/types';
-import { ChevronRightIcon, ClockIcon, BellIcon, LayoutGridIcon } from 'lucide-react';
+import { ChevronRightIcon, ClockIcon, BellIcon, LayoutGridIcon, DownloadIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { ManualInstallButton } from '@/components/ui-custom/ManualInstallButton';
 
 export default function Index() {
   const location = useLocation();
@@ -252,6 +253,25 @@ export default function Index() {
                 <p className="text-xs text-muted-foreground">
                   Access details about your favorite shows
                 </p>
+              </div>
+            </motion.div>
+
+            {/* Manual Install Button */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex items-center p-4 bg-card rounded-2xl shadow-sm border border-border/10"
+            >
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                <DownloadIcon className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold">Install App</h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Install this app on your device
+                </p>
+                <ManualInstallButton />
               </div>
             </motion.div>
           </div>

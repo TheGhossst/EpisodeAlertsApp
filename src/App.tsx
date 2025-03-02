@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "next-themes";
+import { InstallPrompt } from "@/components/ui-custom/InstallPrompt";
 import Index from "./pages/Index";
 import ShowDetail from "./pages/ShowDetail";
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,7 @@ const App = () => (
         <Sonner position="top-center" theme="dark" />
         <BrowserRouter>
           <AnimatedRoutes />
+          <InstallPrompt />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

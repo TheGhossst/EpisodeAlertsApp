@@ -1,0 +1,22 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="256" fill="#7C3AED" />
+  
+  <!-- TV Shape -->
+  <rect x="192" y="256" width="640" height="448" rx="32" fill="white" />
+  
+  <!-- TV Stand -->
+  <path d="M448 704H576V768H448V704Z" fill="white" />
+  <rect x="384" y="768" width="256" height="32" rx="16" fill="white" />
+  
+  <!-- Clock Face -->
+  <circle cx="512" cy="480" r="160" fill="#7C3AED" />
+  <circle cx="512" cy="480" r="144" stroke="white" stroke-width="16" />
+  
+  <!-- Clock Hands -->
+  <rect x="504" y="352" width="16" height="128" rx="8" fill="white" />
+  <rect x="512" y="480" width="96" height="16" rx="8" transform="rotate(-45 512 480)" fill="white" />
+  
+  <!-- Notification Dot -->
+  <circle cx="704" cy="320" r="48" fill="#FF4D4D" />
+</svg>
