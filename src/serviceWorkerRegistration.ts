@@ -138,6 +138,14 @@ export function unregister(): void {
   }
 }
 
+// Define a type for the BeforeInstallPromptEvent globally
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+    appinstalled: Event;
+  }
+}
+
 // Function to check if the app can be installed
 export function canInstallPWA(): boolean {
   console.log('Checking if PWA can be installed');
@@ -148,16 +156,33 @@ export function canInstallPWA(): boolean {
     return true;
   }
   
-  // Fallback checks for different browsers
-  return Boolean(
-    // Check if BeforeInstallPromptEvent exists in window
-    'BeforeInstallPromptEvent' in window || 
-    (
-      // iOS Safari specific check
-      /(iPhone|iPod|iPad)/i.test(navigator.userAgent) && 
-      /Safari/i.test(navigator.userAgent) &&
-      !/(Chrome|CriOS|FxiOS)/i.test(navigator.userAgent)
-    )
+  // Check if we're in a browser that supports service workers
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service workers not supported');
+    return false;
+  }
+
+  // Check if the app is in standalone mode (already installed)
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('App is already installed (standalone mode)');
+    return false;
+  }
+  
+  // Check for Chrome, Edge or other compatible browsers
+  const isCompatibleBrowser = /Chrome|Edge|Opera|Samsung|Android/.test(navigator.userAgent) && 
+    !/(iPad|iPhone|iPod)/.test(navigator.userAgent);
+  
+  if (!isCompatibleBrowser) {
+    console.log('Browser may not support PWA installation');
+  } else {
+    console.log('Browser appears to support PWA installation');
+  }
+  
+  return isCompatibleBrowser || Boolean(
+    // The Safari check for iOS
+    /(iPhone|iPod|iPad)/i.test(navigator.userAgent) && 
+    /Safari/i.test(navigator.userAgent) &&
+    !/(Chrome|CriOS|FxiOS)/i.test(navigator.userAgent)
   );
 }
 
@@ -171,27 +196,66 @@ interface BeforeInstallPromptEvent extends Event {
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
+// Capture the deferred prompt as early as possible, even before DOM is fully loaded
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  // Stash the event so it can be triggered later
+  deferredPrompt = e as BeforeInstallPromptEvent;
+  console.log('Captured beforeinstallprompt event early');
+});
+
 export function initInstallPrompt(): void {
   console.log('Initializing install prompt event listener');
   
   // Check if we already have a stored prompt
   if (deferredPrompt) {
     console.log('Already have a stored prompt');
+  } else {
+    console.log('No deferred prompt available yet');
+    
+    // Add event listener again just to be safe
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      deferredPrompt = e as BeforeInstallPromptEvent;
+      console.log('Captured beforeinstallprompt event');
+    });
   }
   
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent Chrome 67 and earlier from automatically showing the prompt
-    e.preventDefault();
-    // Stash the event so it can be triggered later
-    deferredPrompt = e as BeforeInstallPromptEvent;
-    console.log('Captured beforeinstallprompt event');
-  });
-  
-  // Also listen for appinstalled event
+  // Listen for when the PWA is successfully installed
   window.addEventListener('appinstalled', () => {
     console.log('App was installed');
     deferredPrompt = null;
   });
+  
+  // Check if app is already in standalone mode
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('App is already in standalone mode (installed)');
+  }
+  
+  // Check if install criteria are met
+  console.log('Install criteria met:', Boolean(
+    // Check service workers supported
+    'serviceWorker' in navigator &&
+    // Not already in standalone mode
+    !window.matchMedia('(display-mode: standalone)').matches &&
+    // Has a valid manifest
+    !!document.querySelector('link[rel="manifest"]')
+  ));
+  
+  // Force browser to check for install criteria by accessing the manifest
+  const manifestLink = document.querySelector('link[rel="manifest"]');
+  if (manifestLink) {
+    const href = manifestLink.getAttribute('href');
+    if (href) {
+      console.log('Manifest found at:', href);
+      fetch(href).then(() => console.log('Manifest fetched to trigger installability check'));
+    }
+  } else {
+    console.warn('No manifest link found in document head');
+  }
 }
 
 export function showInstallPrompt(): Promise<boolean> {
@@ -199,6 +263,33 @@ export function showInstallPrompt(): Promise<boolean> {
   
   if (!deferredPrompt) {
     console.log('No deferred prompt available, cannot show install prompt');
+    
+    // Try to manually trigger installability check
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        console.log('Service worker registrations:', registrations.length);
+      });
+    }
+    
+    // On iOS, we can provide custom instructions
+    if (/(iPhone|iPod|iPad)/i.test(navigator.userAgent)) {
+      console.log('On iOS device, use Add to Home Screen option');
+      return Promise.resolve(false);
+    }
+    
+    // Try manual installation for Chrome
+    if (/Chrome/.test(navigator.userAgent)) {
+      console.log('Chrome detected, checking for installability');
+      
+      // Try to force show the install prompt
+      const manifestLink = document.querySelector('link[rel="manifest"]');
+      if (manifestLink) {
+        console.log('Manifest found, attempting to trigger install check');
+        fetch(manifestLink.getAttribute('href') || '')
+          .then(() => console.log('Manifest fetched to trigger installability'));
+      }
+    }
+    
     return Promise.resolve(false);
   }
 
